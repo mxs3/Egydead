@@ -1,13 +1,12 @@
 async function searchResults(keyword) {
   try {
-    const searchUrl = `https://a.asd.homes/?s=${encodeURIComponent(keyword)}`;
+    const searchUrl = `https://a.asd.homes/find/?find=${encodeURIComponent(keyword)}`;
     const response = await fetchv2(searchUrl);
     if (!response) return [];
 
     const html = await response.text();
     const results = [];
 
-    // regex لالتقاط الرابط + البوستر + العنوان
     const regex = /<a href="([^"]+)"[^>]*>\s*<div class="Poster">\s*<img[^>]+data-src="([^"]+)"[^>]+alt="([^"]+)"/g;
 
     let match;
