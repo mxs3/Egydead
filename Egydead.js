@@ -1,25 +1,24 @@
-// 🔎 EgyDead Search Function (tv3.egydead.live)
 async function searchResults(keyword) {
-  const results = [];
   try {
     const url = `https://tv3.egydead.live/?s=${encodeURIComponent(keyword)}`;
-    const res = await fetchv2(url);
-    if (!res) return results;
+    const html = await fetchv2(url);
+    if (!html) return JSON.stringify([]);
 
-    // ✅ نجبره يقرأ HTML
-    const html = typeof res.text === "function" ? await res.text() : res;
+    const results = [];
+    const regex = /<div class="result-item">.*?<a href="([^"]+)"[^>]*title="([^"]+)".*?<img[^>]+src="([^"]+)"/gs;
 
-    const regex = /<li class="movieItem">[\s\S]*?<a href="([^"]+)"[^>]*title="([^"]+)">[\s\S]*?<img src="([^"]+)"[^>]*>[\s\S]*?<h1 class="BottomTitle">([^<]+)<\/h1>/g;
     let match;
     while ((match = regex.exec(html)) !== null) {
       results.push({
-        title: (match[2] || match[4]).trim(),
-        url: match[1].trim(),
-        poster: match[3].trim()
+        title: match[2].trim(),
+        image: match[3],
+        href: match[1],
       });
     }
+
+    return JSON.stringify(results);
   } catch (err) {
-    console.log("❌ searchResults error:", err);
+    console.log("EgyDead search error:", err);
+    return JSON.stringify([]);
   }
-  return results;
 }
