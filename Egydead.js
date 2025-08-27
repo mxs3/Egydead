@@ -1,24 +1,34 @@
 async function searchResults(keyword) {
   try {
-    const url = `https://tv3.egydead.live/?s=${encodeURIComponent(keyword)}`;
-    const html = await fetchv2(url);
-    if (!html) return JSON.stringify([]);
+    const encoded = encodeURIComponent(keyword);
+    const resText = await fetch(`https://egydead.com.co/search?s=${encoded}`);
+    if (!resText) return JSON.stringify([]);
 
-    const results = [];
-    const regex = /<div class="result-item">.*?<a href="([^"]+)"[^>]*title="([^"]+)".*?<img[^>]+src="([^"]+)"/gs;
+    const regex = /الحلق.? ([^ ]+).*?\s(انمى [^"]*)/g;
 
-    let match;
-    while ((match = regex.exec(html)) !== null) {
-      results.push({
-        title: match[2].trim(),
-        image: match[3],
-        href: match[1],
-      });
+    const map = new Map();
+    let m;
+    while ((m = regex.exec(resText)) !== null) {
+      const episode = m[1]; // مثلاً: "23"
+      const fullTitle = m[2]; // مثلاً: "انمى Jujutsu Kaisen الموسم الثاني الحلقة 23 مترجمة"
+      const baseTitle = fullTitle.replace(/ الموسم.*/g, "").trim();
+
+      if (!map.has(baseTitle)) {
+        // نجلب الرابط من الـ text من خلال البحث بين الأقواس [14] الخ...
+        const linkMatch = /\[(\d+)†.*?\]\s*(.*?)\s/;
+        const idx = m.index;
+        // نفترض إن اللينك موجود بجوار التقسيم اللي فيه الرقم المرجعي.
+        const snippet = resText.slice(idx - 100, idx + 100);
+        const lm = snippet.match(/https?:\/\/[^ ]+/);
+        const href = lm ? lm[0] : "";
+
+        map.set(baseTitle, { title: baseTitle, href });
+      }
     }
 
-    return JSON.stringify(results);
-  } catch (err) {
-    console.log("EgyDead search error:", err);
+    return JSON.stringify(Array.from(map.values()));
+  } catch (e) {
+    console.log("searchResults error:", e);
     return JSON.stringify([]);
   }
 }
